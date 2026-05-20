@@ -1,0 +1,16 @@
+{
+  "name": "sensortower",
+  "module": "scripts/index.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "scrape": "bun run scripts/index.ts",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@types/bun": "latest"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  }
+}
