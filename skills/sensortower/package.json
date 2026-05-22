@@ -5,6 +5,7 @@
   "private": true,
   "scripts": {
     "scrape": "bun run scripts/index.ts",
+    "test": "bun test",
     "typecheck": "tsc --noEmit"
   },
   "devDependencies": {
