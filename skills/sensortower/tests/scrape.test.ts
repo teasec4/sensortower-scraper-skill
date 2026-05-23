@@ -1,7 +1,7 @@
 import { describe, expect, test } from "bun:test";
-import { defaultAnalysisCriteria } from "./criteria";
-import type { ScrapeOptions } from "./types";
-import { buildSensorTowerTopChartsUrl, normalizeLightpandaMarkdownSnapshot } from "./scrape";
+import { defaultAnalysisCriteria } from "../scripts/criteria";
+import type { ScrapeOptions } from "../scripts/types";
+import { buildSensorTowerTopChartsUrl, normalizeLightpandaMarkdownSnapshot } from "../scripts/scrape";
 
 const baseOptions: ScrapeOptions = {
   category: "games",

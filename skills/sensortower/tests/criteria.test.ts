@@ -1,6 +1,6 @@
 import { describe, expect, test } from "bun:test";
-import { defaultAnalysisCriteria, evaluateAppCriteria, filterRowsByCriteria } from "./criteria";
-import type { AppChartRow } from "./types";
+import { defaultAnalysisCriteria, evaluateAppCriteria, filterRowsByCriteria } from "../scripts/criteria";
+import type { AppChartRow } from "../scripts/types";
 
 const baseRow: AppChartRow = {
   appId: "123",

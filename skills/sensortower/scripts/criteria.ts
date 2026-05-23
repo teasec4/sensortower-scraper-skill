@@ -1,7 +1,7 @@
 import type { AnalysisCriteria, AppChartRow, CriteriaMode } from "./types";
 
 export const defaultAnalysisCriteria: AnalysisCriteria = {
-  maxAgeYears: 3,
+  maxAgeYears: 2,
   minDownloads: 20_000,
   minRevenueUsd: 20_000,
 };

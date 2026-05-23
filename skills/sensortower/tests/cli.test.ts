@@ -1,5 +1,5 @@
 import { describe, expect, test } from "bun:test";
-import { parseCliArgs } from "./cli";
+import { parseCliArgs } from "../scripts/cli";
 
 describe("parseCliArgs", () => {
   test("parses chart options without a caller-provided limit", () => {
