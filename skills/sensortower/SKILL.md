@@ -1,122 +1,80 @@
 ---
 name: sensortower
-description: Use when the user wants to collect, scrape, normalize, or analyze top app chart data by store, country, category, chart type, rank, publisher, or custom statistical criteria.
+description: Use when the user asks to research Sensor Tower Top Charts, app rankings, free downloads, top grossing apps, or app market opportunities by country, category, and chart using the Sensor Tower site/API contract.
 ---
 
-# Sensortower App Chart Scraper
+# Sensor Tower Top Charts
 
-Use this skill when the user asks for app chart scraping, ranking analysis, app market research, Sensor Tower-style chart data, App Store charts, Google Play charts, or statistical analysis of top apps.
+Use this skill when the user asks for Sensor Tower chart research or app market analysis.
 
-## Core Workflow
+## Main Workflow
 
-1. Clarify the target chart if the user did not provide it:
-   - `store`: `ios` or `android`
-   - `country`: two-letter country code such as `us`, `gb`, `de`
-   - `category`: chart category such as `overall`, `games`, `productivity`
-   - `chart`: `top-free`, `top-paid`, or `top-grossing`
-   - `date`: optional chart date as `YYYY-MM-DD`
-2. Run the CLI from the skill directory. A run should fetch one full chart snapshot, then normalize it.
-3. Save raw Lightpanda output with `--raw-out` when debugging page changes or empty results.
-4. Use the normalized output rows for analysis and criteria filtering.
-5. If the user asks for code changes, keep `scripts/index.ts` as a thin entrypoint and put scraper logic in `scripts/scrape.ts`.
+1. Read `site-struck.md` first. It contains the current endpoint, parameter schema, category IDs, and fallback selectors.
+2. Prefer the direct Top Charts JSON endpoint from `site-struck.md` over rendered page parsing.
+3. Use these default filters unless the user says otherwise:
+   - Store/platform: App Store / iOS.
+   - Date: yesterday relative to the current session date.
+   - Country/Region: `US`.
+   - Category: the category requested by the user, mapped to the numeric Sensor Tower category ID.
+   - Device: `iPhone`.
+4. Analyze only these chart groups unless the user asks otherwise:
+   - Free Downloads / Top Free: `data.free`.
+   - Top Grossing: `data.grossing`.
+5. Ignore paid-download charts unless the user explicitly requests them.
+6. Normalize rows according to `site-struck.md`, keeping rank, previous rank, app ID, app name, publisher, chart type, rating, IAP flag, price, and available worldwide last-month download/revenue estimates.
 
-## Default Criteria
+## Site Structure Notes
 
-The scraper applies these criteria by default in `strict` mode:
+- If the direct endpoint fails or returns unexpected data, open Sensor Tower in a browser: `https://app.sensortower.com/`.
+- If Sensor Tower asks for login, use credentials from `.env`. Do not print, summarize, or store the credentials anywhere else.
+- Browser fallback path: `Market Analysis` -> `Top Charts`.
+- Follow `site-struck.md` selector/layout notes. Prefer stable labels, roles, visible text, and `data-test` attributes over generated class names.
+- If the page returns no data or the selected filters appear wrong, verify each filter in the UI before changing analysis assumptions.
 
-- `releaseDate`: not older than 3 years
-- `downloads`: at least `20_000`
-- `revenueUsd`: at least `20_000`
+## Analysis Criteria
 
-Use `--criteria off` to inspect a full normalized chart. Use `--criteria keep-unknown` while a source has not yet exposed all metric fields; rows with unknown metrics stay in the result unless a known metric fails.
+The final selection criteria are not defined yet. Do not invent hard filters.
 
-## Commands
+Until the user provides criteria:
 
-Show help:
+- Report what is visible in the configured charts.
+- Separate Free Downloads and Top Grossing results.
+- Flag missing or ambiguous metrics instead of guessing.
+- Ask for criteria only when the next step depends on them.
 
-```bash
-bun run scrape --help
-```
+## Local Code Notes
 
-Scrape a chart as JSON:
+- This folder also contains a Bun/TypeScript helper CLI for scraping and normalization.
+- Prefer the direct API workflow in `site-struck.md` for Sensor Tower research.
+- Use the local CLI only for code work, smoke tests, legacy Lightpanda page snapshots, or when the user specifically asks for scraper output.
 
-```bash
-bun run scrape --store ios --country us --category games --chart top-free
-```
+## Local Tool Usage
 
-Print a readable ranking:
+Run commands from this skill directory.
 
-```bash
-bun run scrape --store android --country gb --category overall --chart top-free --format pretty
-```
-
-Save output to a file:
-
-```bash
-bun run scrape --store ios --country us --category overall --chart top-grossing --out data/ios-us-grossing.json
-```
-
-Save the raw Lightpanda snapshot while scraping:
+Use the mock source to verify the tool without opening Sensor Tower:
 
 ```bash
-bun run scrape --store ios --country us --category games --chart top-free --raw-out data/raw/ios-us-games-free.md
+bun run scrape --source mock --format pretty
 ```
 
-Inspect the full normalized chart without criteria:
+Use the scraper source only when maintaining the legacy Lightpanda page scraper or when the user asks for raw scraper output:
 
 ```bash
-bun run scrape --store ios --country us --category games --chart top-free --criteria off
+bun run scrape --store ios --country us --category <category> --chart top-free --criteria off
+bun run scrape --store ios --country us --category <category> --chart top-grossing --criteria off
 ```
 
-Tune criteria for a run:
+When debugging Sensor Tower page changes, save the raw snapshot:
 
 ```bash
-bun run scrape --store ios --country us --category games --chart top-free --max-age-years 2 --min-downloads 20000 --min-revenue 20000
+bun run scrape --store ios --country us --category <category> --chart top-free --criteria off --raw-out data/raw/snapshot.md
 ```
 
-Typecheck the CLI:
+Tool rules:
 
-```bash
-bun run typecheck
-```
-
-## Data Contract
-
-The scraper returns normalized `AppChartRow` objects:
-
-```ts
-type AppChartRow = {
-  date: string;
-  store: "ios" | "android";
-  country: string;
-  category: string;
-  chart: "top-free" | "top-paid" | "top-grossing";
-  rank: number;
-  appId: string;
-  appName: string;
-  publisher?: string;
-  releaseDate?: string;
-  downloads?: number;
-  revenueUsd?: number;
-  url?: string;
-  scrapedAt: string;
-};
-```
-
-## Code Layout
-
-- `scripts/index.ts`: CLI entrypoint. Keep it small.
-- `scripts/cli.ts`: argument parsing, validation, help text, output formatting.
-- `scripts/criteria.ts`: default analysis criteria and filtering.
-- `scripts/lightpanda_helper.ts`: Lightpanda process wrapper.
-- `scripts/scrape.ts`: scraping use-case, raw snapshot handling, and normalization.
-- `scripts/types.ts`: shared types and normalized data schema.
-
-## Implementation Notes
-
-- Prefer Bun commands: `bun run`, `bun test`, `bun install`.
-- Keep raw scraping separate from analysis logic.
-- Validate arguments before making network requests.
-- Preserve the normalized row schema when changing the source site.
-- Do not add a caller-controlled chart limit unless the source supports a larger page size; Sensor Tower charts are treated as full chart snapshots.
-- For real scraping, add rate limits, retries, and clear errors for blocked or changed pages.
+- Use `top-free` for Free Downloads.
+- Use `top-grossing` for Top Grossing.
+- Keep `--criteria off` until the user defines selection criteria.
+- Do not use `top-paid` unless the user explicitly asks for paid charts.
+- If real scraper output is empty, fall back to the browser workflow and inspect `site-struck.md` when it exists.
